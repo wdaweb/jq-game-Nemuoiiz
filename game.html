@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Klee+One&family=Kosugi+Maru&family=Neonderthaw&display=swap"
+        rel="stylesheet">
+
+    <title>Tarocchi 記憶遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #1C234E;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #container .frame {
+            width: 80%;
+            height: auto;
+        }
+
+        #game {
+            width: 70%;
+            height: 50%;
+            margin: auto;
+            position: absolute;
+            top: 13%;
+            left: 50%;
+            transform: translateX(-50%);
+            /* 使用 transform 來確保水平置中 */
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-gap: 5px;
+        }
+
+        .card {
+            width: 70px;
+            height: 120px;
+            position: relative;
+            margin: 10px;
+            float: left;
+            transform-style: preserve-3d;
+            transition: transform 0.7s;
+        }
+
+        .card-front {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            background-image: url('./img/01.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            backface-visibility: hidden;
+        }
+
+        .card-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            background-image: url('./img/backB.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            backface-visibility: hidden;
+            transform: rotateY(180deg);
+        }
+
+        .card-close {
+            transform: rotateY(180deg);
+        }
+
+        #timer {
+            position: absolute;
+            bottom: 10%;
+            left: 22%;
+            font-size: 3rem;
+            font-family: "Berkshire Swash", serif;
+            color: white;
+            margin: 15px;
+        }
+
+        #btns {
+            position: absolute;
+            bottom: 10%;
+            right: 25%;
+            display: flex;
+            justify-content: center;
+            text-align: center;
+        }
+
+        #container .btn-1,
+        #container .btn-2 {
+            width: 120px;
+            height: 40px;
+            line-height: 40px;
+            margin: 20px;
+            font-size: 1.2rem;
+            font-family: "Kosugi Maru", sans-serif;
+        }
+
+        #container a {
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            border-radius: 10px;
+            background: linear-gradient(to right, #FD9991, #7958D1);
+            transition: background 0.6s ease, color 0.6s ease;
+            color: aliceblue;
+        }
+
+        #container a:hover {
+            background: linear-gradient(to right, #FEC6C6, #94CEE8);
+            color: #1C234E;
+        }
+
+        #startGame.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <img class="frame" src="./img/try.png">
+        <div id="game"></div>
+        <div id="timer">Ready to start</div>
+        <div id="btns">
+            <div class="btn-1">
+                <a id="startGame" href="javascript:void(0);">
+                    開始遊戲
+                </a>
+            </div>
+            <div class="btn-2">
+                <a href="./homepage.html">
+                    回到首頁
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js'
+        integrity='sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=='
+        crossorigin='anonymous'></script>
+
+    <script>
+        let gameStart = false;
+        let startTime;
+        let timerInterval;
+
+        function shuffleCards() {
+            for (let i = 0; i < 20; i++) {
+                const randA = Math.round(Math.random() * 19);
+                const randB = Math.round(Math.random() * 19);
+                $('.card').eq(randA).insertAfter($('.card').eq(randB));
+            }
+        }
+
+        function startCountdown() {
+            let countdown = 5;
+            $('#timer').text(`countdown : ${countdown}`);
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                $('#timer').text(`countdown : ${countdown}`);
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    $('.card').addClass('card-close'); // 翻回背面
+                    gameStart = true;
+                    startTime = new Date();
+                    timerInterval = setInterval(updateTimer, 1000);
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((new Date() - startTime) / 1000);
+            $('#timer').text(`Timer : ${elapsed} `);
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            $('#game').empty();
+            initializeCards();
+            shuffleCards();
+            $('#startGame').removeClass('disabled');
+            $('#timer').text('Ready to start');
+            gameStart = false;
+        }
+
+        function initializeCards() {
+            for (let i = 0; i < 20; i++) {
+                const card = $(
+                    `<div class="card card-close">
+                        <div class="card-front"></div>
+                        <div class="card-back"></div>
+                    </div>`
+                );
+                const number = i % 10;
+                card.find('.card-front').css('background-image', `url(./img/0${number}.png)`);
+                card.attr('data-number', number);
+                $('#game').append(card);
+            }
+        }
+
+        $(document).ready(function () {
+            // 初始化卡片
+            initializeCards();
+            shuffleCards();
+
+            $('#startGame').click(function () {
+                $(this).addClass('disabled'); // 禁用按鈕
+                $('.card').removeClass('card-close'); // 翻到正面
+                startCountdown();
+            });
+
+            // 卡牌點擊事件
+            $(document).on('click', '.card', function () {
+                if (!gameStart || $('.card:not(.card-close)').length > 1) {
+                    return;
+                }
+
+                if ($(this).hasClass('card-close') && !$(this).hasClass('card-ok')) {
+                    $(this).removeClass('card-close');
+                }
+
+                if ($('.card:not(.card-close)').length === 2) {
+                    const card1 = $('.card:not(.card-close)').eq(0);
+                    const card2 = $('.card:not(.card-close)').eq(1);
+
+                    if (card1.attr('data-number') === card2.attr('data-number')) {
+                        $('.card:not(.card-close)').addClass('card-ok').delay(500).fadeTo(500, 0);
+                    }
+
+                    setTimeout(function () {
+                        $('.card:not(.card-close)').addClass('card-close');
+
+                        if ($('.card-ok').length === $('.card').length) {
+                            clearInterval(timerInterval);
+                            const elapsed = Math.floor((new Date() - startTime) / 1000);
+                            alert(`過關！遊玩時間: ${elapsed} 秒`);
+                            resetGame();
+                        }
+                    }, 1000);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
